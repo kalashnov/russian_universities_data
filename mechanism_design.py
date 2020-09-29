@@ -2,6 +2,7 @@ from collections import defaultdict, Counter
 import pandas as pd
 import numpy as np
 import json
+import config
 
 class Economy(object):
     def __init__(self, type_space, distribution_function, utilities):

@@ -1,6 +1,7 @@
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
+import config
 
 
 def requests_retry_session(

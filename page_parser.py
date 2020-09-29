@@ -4,6 +4,7 @@ import json
 import itertools
 import js2py
 from collections import defaultdict
+import config
 
 IDENTIFYING_EXAMS = ['рус', 'мат', 'ино', 'физ', 'хим', 'общ', 'ист']
 IDENTIFYING_EXAMS = ['рус']
@@ -44,21 +45,25 @@ def html_table_parse(table):
 
 def parse_page_to_csv(file):
     print('Processing', file)
-    page = open(file, 'r')
-    soup = BeautifulSoup(page, 'html.parser')
-    obfuscation = soup.find(text='var _0x9a08=["write"];function Enc(_0xbf5dx2){document[_0x9a08[0]](_0xbf5dx2^27)}') is not None
-    historical = soup.find(text='Это справочная таблица за 2018 год, актуальная информация доступна на сайте admlist.ru') is not None
-    tables = soup.find_all('table')
-    if len(tables) <= 1:
-        yield
-    else:
-        yield from (
-            dict(
-                {k: reconstruct_field(v, obfuscation=obfuscation) for k, v in row.items()},
-                program=soup.h2.get_text(), obfuscation=obfuscation, historical=historical
+    try:
+        page = open(file, 'r')
+        soup = BeautifulSoup(page, 'html.parser')
+        obfuscation = soup.find(text='var _0x9a08=["write"];function Enc(_0xbf5dx2){document[_0x9a08[0]](_0xbf5dx2^27)}') is not None
+        historical = soup.find(text='Это справочная таблица за 2018 год, актуальная информация доступна на сайте admlist.ru') is not None
+        tables = soup.find_all('table')
+        if len(tables) <= 1:
+            yield dict(file=file)
+        else:
+            yield from (
+                dict(
+                    {k: reconstruct_field(v, obfuscation=obfuscation) for k, v in row.items()},
+                    program=soup.h2.get_text(), obfuscation=obfuscation, historical=historical,
+                    file=file
+                )
+                for row in html_table_parse(tables[1])
             )
-            for row in html_table_parse(tables[1])
-        )
+    except Error as e:
+        yield dict(file=file, error_repr=repr(e), error_str=str(e), error_message=e.message)
 
 if __name__ == '__main__': # ok, for now csv. then mongo/Hadoop/Greenplum then
     results = []
@@ -66,7 +71,7 @@ if __name__ == '__main__': # ok, for now csv. then mongo/Hadoop/Greenplum then
     for file in glob.iglob('pages' + '/**/*.html', recursive=True):
         new_entries = parse_page_to_csv(file)
         results.append(dict(entry, date=file.split('/')[1]) for entry in new_entries)
-    all_results = itertools.chain(*results[:3])
+    all_results = itertools.chain(*results)
     json.dump(list(all_results), open('test_string.json', 'w'), ensure_ascii=False, indent=4)
     # for result in all_results:
     #     if 'фио' not in result:
