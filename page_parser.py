@@ -32,6 +32,7 @@ def reconstruct_field(js, obfuscation=False):
     else:
         return js
 
+
 def html_table_parse(table):
     rows = table.find_all('tr')
     titles = [r.string for r in rows.pop(0).find_all('th')]
@@ -43,8 +44,9 @@ def html_table_parse(table):
         # execute
         yield retval
 
-def parse_page_to_csv(file):
-    print('Processing', file)
+
+def parse_individual_tab(file):
+    print('Processing individual tab', file)
     try:
         page = open(file, 'r')
         soup = BeautifulSoup(page, 'html.parser')
@@ -55,16 +57,38 @@ def parse_page_to_csv(file):
             yield dict(file=file)
         else:
             yield from (
-                dict(
-                    {k: reconstruct_field(v, obfuscation=obfuscation) for k, v in row.items()},
-                    program=soup.h2.get_text(), obfuscation=obfuscation, historical=historical,
-                    file=file
+                    dict(
+                        {k: reconstruct_field(v, obfuscation=obfuscation) for k, v in row.items()},
+                        program=soup.h2.get_text(), obfuscation=obfuscation, historical=historical,
+                        file=file
+                    )
+                    for row in html_table_parse(tables[-1])
                 )
-                for row in html_table_parse(tables[1])
-            )
-    except Error as e:
+    except Exception as e:
         yield dict(file=file, error_repr=repr(e), error_str=str(e), error_message=e.message)
 
+# Yields single generator for single html-file with tuples ('key', 'value').
+# For successful try keys include: 'кцп', 'зая', 'люд', 'атт', 'ок', 'бви', 'цел', 'кво', 'program', 'obfuscation', 'historical', 'file'. 
+def parse_program_tab(file):
+    print('Processing program tab', file)
+    try:
+        page = open(file, 'r')
+        soup = BeautifulSoup(page, 'html.parser')
+        obfuscation = soup.find(text='var _0x9a08=["write"];function Enc(_0xbf5dx2){document[_0x9a08[0]](_0xbf5dx2^27)}') is not None
+        historical = soup.find(text='Это справочная таблица за 2018 год, актуальная информация доступна на сайте admlist.ru') is not None
+        tables = soup.find_all('table')
+        if len(tables) <= 1:
+            yield dict(file=file)
+        else:
+            program_table = next(html_table_parse(tables[0]))
+            yield from dict(
+                program_table,
+                program=soup.h2.get_text(), obfuscation=obfuscation, historical=historical, file=file
+            ).items()
+    except Exception as e:
+        yield dict(file=file, error_repr=repr(e), error_str=str(e), error_message=e.message)
+
+    
 if __name__ == '__main__': # ok, for now csv. then mongo/Hadoop/Greenplum then
     results = []
     students = defaultdict(dict)
