@@ -71,12 +71,30 @@ def parse_individual_tab(file):
         return [
                 dict(
                     {k: reconstruct_field(v, obfuscation=obfuscation) for k, v in row.items()},
-                    program=str(soup.h2.get_text()), obfuscation=obfuscation, historical=historical,
-                    file=file
+                    program=str(soup.h2.get_text()), obfuscation=obfuscation, historical=historical, file=file
                 )
                 for row in html_table_parse(tables[-1])
         ]
-
+def parse_individual_tab_mod(file):
+    page = open(file, 'r')
+    soup = BeautifulSoup(page, 'html.parser')
+    obfuscation = soup.find(text=re.compile(".*function Enc.*"))
+    if obfuscation is not None:
+        obfuscation = re.sub(r'document\[.*\]', 'return', obfuscation)
+    
+    historical = soup.find(text='Это справочная таблица за 2018 год, актуальная информация доступна на сайте admlist.ru') is not None
+    tables = soup.find_all('table')
+    if len(tables) <= 1:
+        return [dict(file=file)]
+    else:
+        return [
+                dict(
+                    {k: reconstruct_field(v, obfuscation=obfuscation) for k, v in row.items()},
+                    program=str(soup.h2.get_text()), obfuscation=obfuscation, historical=historical, date=file[6:14],
+                    year=file[6:10], month=file[10:12], day=file[12:14], file=file
+                )
+                for row in html_table_parse(tables[-1])
+        ]
 
 #     except Exception as e:
 #         yield dict(file=file, error_repr=repr(e), error_str=str(e), error_message=getattr(e, 'message', None))
