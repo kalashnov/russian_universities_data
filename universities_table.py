@@ -12,10 +12,6 @@ def create_program_tab(program_tab, gen_individual_tab):
     program = {}
     individual_df = pd.DataFrame(gen_individual_tab)
     program['program'] = program_tab.pop('program')
-    splitted_name = program['program'].split(',')
-    for i in range(len(splitted_name)):
-        splitted_name[i] = splitted_name[i].strip()
-    program['uni'], program['dept'], program['prog'] = splitted_name[0], splitted_name[1], splitted_name[2]
     if program_tab['historical']:
         program['year'] = 2018
     else:
