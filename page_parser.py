@@ -11,6 +11,9 @@ from joblib import Memory
 location = './cachedir'
 memory = Memory(location, verbose=0)
 
+need_full_names = ['экз', 'егэ', 'ака', 'арх', 'тво', 'ви ', 'фк', 'тв.', 'рис', 'вну', 'про', 'диз', 'вит', 'доп', 'вст', 
+                   'жив', 'муз', 'ржк', 'соб', 'спе', 'тат', 'тк', 'тку', 'эип', 'эко', 'эле', 'воз', 'гид', 'дош', 'осн', 'пед', 'пси', 'эк.']
+
 class Student(object):
     def __init__(self, fio, score_rus=None):
         self.fio = fio
@@ -37,10 +40,11 @@ def reconstruct_field(js, obfuscation=None): # works long!
 
 def html_table_parse(table): # refactor -- move to pd.from_html
     rows = table.find_all('tr')
-    titles = [(r.string or '') for r in rows.pop(0).find_all('th')]
+    titles_parsed = [(r.string or '').strip().lower() for r in rows.pop(0).find_all('th')]
+    titles = [title if (title[:3] in need_full_names) else title[:3] for title in titles_parsed]
     for r in rows:
         retval = dict(
-            (title.strip()[:3].lower(), entry.string) if 'дви' not in title.lower() else ('дви', entry.string)
+            (title, entry.string) if 'дви' not in title else ('дви', entry.string)
             for title, entry in zip(titles, r.find_all('td'))
         )
         # execute
