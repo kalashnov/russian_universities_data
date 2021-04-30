@@ -41,7 +41,7 @@ def reconstruct_field(js, obfuscation=None): # works long!
 def html_table_parse(table): # refactor -- move to pd.from_html
     rows = table.find_all('tr')
     titles_parsed = [(r.string or '').strip().lower() for r in rows.pop(0).find_all('th')]
-    titles = [title if title[:3] in need_full_names else title[:3] for title in titles_parsed]
+    titles = [title if (title[:3] in need_full_names) else title[:3] for title in titles_parsed]
     for r in rows:
         retval = dict(
             (title, entry.string) if 'дви' not in title else ('дви', entry.string)
