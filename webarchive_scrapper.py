@@ -1,4 +1,5 @@
 import requests
+from requests_html import HTMLSession
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 import config
@@ -10,7 +11,7 @@ def requests_retry_session(
     status_forcelist=(500, 502, 503, 504),
     session=None,
 ):
-    session = session or requests.Session()
+    session = session or HTMLSession()
     retry = Retry(
         total=retries,
         read=retries,
