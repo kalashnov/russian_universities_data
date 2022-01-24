@@ -48,6 +48,7 @@ def get_archive_version(timestamp, url):
 		'sec-fetch-mode': 'navigate'}
 	query_url = 'https://web.archive.org' + query_url_path
 	response = requests_retry_session(retries=10).get(query_url, headers=headers)
+	response.html.render()
 	# move logging here
 	return response
 
